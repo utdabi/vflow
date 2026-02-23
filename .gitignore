@@ -1,0 +1,69 @@
+# Environment variables (never commit secrets)
+.env
+.env.local
+.env.production
+
+# Node / Frontend
+node_modules/
+dist/
+.vite/
+
+# Python / Backend
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+.venv
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# uv
+uv.lock
+
+# Supabase local
+.supabase/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+NUL
+abi.txt
+
+# One-time setup tokens (contain sensitive invite links)
+setup_token.txt
+intl_setup_token.txt
+supabase/migrations/001_core_schema.sql
+supabase/migrations/002_volunteers.sql
+supabase/migrations/005_shifts.sql
+supabase/migrations/006_time_logs.sql
+ARCHITECTURE.md
+CLAUDE.md
+progress.txt
+prd.md
+workflow.md
+.claude/napkin.txt
+.claude/settings.local.json
+.claude/skills/napkin.md
+.claude/skills/refactor.md
+scripts/samples/intl_test_volunteers.csv
+scripts/samples/volunteer_template.csv
+scripts/samples/volunteer_test_data.csv
+scripts/test_shifts.py
+scripts/regression_test.mjs
+scripts/test_csv_parser.py
+scripts/test_csv_upload.mjs
+scripts/test_date_format.mjs
+scripts/test_intl_csv_import.py
+.claude/skills/feature-work.md
+.claude/skills/frontend-design.md
+.claude/skills/explore-before-edit.md
+frontend/.env.example
