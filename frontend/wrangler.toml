@@ -1,0 +1,10 @@
+# wrangler.toml — Cloudflare Workers (static assets)
+# Replaces Cloudflare Pages (deprecated April 2025).
+# This deploys the Vite build output as a static site via Workers.
+
+name = "volunteerflow"
+compatibility_date = "2025-01-01"
+
+# Serve the Vite build output as static assets
+[assets]
+directory = "./dist"

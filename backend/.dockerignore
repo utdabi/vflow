@@ -1,0 +1,35 @@
+# .dockerignore — keeps the Docker build context small and safe
+
+# Virtual environment (rebuilt inside the image)
+.venv/
+
+# Local environment files — NEVER bake secrets into the image
+.env
+.env.*
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Test artifacts
+.pytest_cache/
+htmlcov/
+.coverage
+*.egg-info/
+dist/
+build/
+
+# Editor / OS noise
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+Thumbs.db
+
+# Git
+.git/
+.gitignore

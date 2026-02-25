@@ -67,3 +67,10 @@ scripts/test_intl_csv_import.py
 .claude/skills/frontend-design.md
 .claude/skills/explore-before-edit.md
 frontend/.env.example
+mobile/tailwind.config.js
+mobile/package.json
+mobile/package-lock.json
+mobile/metro.config.js
+mobile/babel.config.js
+mobile/app.json
+mobile/.npmrc
