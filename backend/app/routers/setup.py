@@ -11,7 +11,7 @@
 #   POST /api/setup/complete
 #        - Accepts token + coordinator credentials (email, password, full_name)
 #        - Creates a Supabase Auth user via the Admin API
-#        - Sets organization_id in user_metadata (picked up by JWT → RLS)
+#        - Sets organization_id in app_metadata (not user-editable)
 #        - Marks the token as used (idempotency guard)
 #        - Returns the Supabase session (access_token + user) so the frontend
 #          can store the JWT and redirect to the dashboard without a second login
@@ -161,7 +161,7 @@ async def complete_setup(
     org_id: str = org["id"]
     logger.info("setup/complete → creating user for org '%s' (email: %s)", org["name"], body.email)
 
-    # 2. Create the Supabase Auth user with organization_id in user_metadata.
+    # 2. Create the Supabase Auth user with organization_id in app_metadata.
     #    We use the Admin API (service-role key) so no email confirmation is needed.
     try:
         create_response = client.auth.admin.create_user(
@@ -170,7 +170,11 @@ async def complete_setup(
                 "password": body.password,
                 "email_confirm": True,  # skip confirmation email for invite flow
                 "user_metadata": {
+                    # stays — used by AppNav for display name
                     "full_name": body.full_name,
+                },
+                "app_metadata": {
+                    # moved — not user-editable
                     "organization_id": org_id,
                 },
             }

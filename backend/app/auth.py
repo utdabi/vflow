@@ -8,7 +8,7 @@
 # verifies the token server-side and returns the user object if it's valid.
 # This is the recommended approach for server-side validation with the new key system.
 #
-# Extracts user id, email, and organization_id (stored in user_metadata).
+# Extracts user id, email, and organization_id (stored in app_metadata).
 # Raises HTTP 401 if the token is missing, expired, or invalid.
 
 from typing import Annotated
@@ -45,7 +45,7 @@ async def get_current_user(
     check that the returned user has the expected organization_id claim.
 
     The token is expected in the Authorization: Bearer <token> header.
-    organization_id is stored in user_metadata by the setup flow.
+    organization_id is stored in app_metadata by the setup flow.
     """
     if credentials is None:
         raise HTTPException(
@@ -75,8 +75,8 @@ async def get_current_user(
 
     user_id = str(user.id)
     email = user.email or ""
-    user_metadata: dict = user.user_metadata or {}
-    organization_id: str | None = user_metadata.get("organization_id")
+    app_metadata: dict = user.app_metadata or {}
+    organization_id: str | None = app_metadata.get("organization_id")
 
     if not organization_id:
         raise HTTPException(
