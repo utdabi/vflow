@@ -21,8 +21,6 @@ venv/
 .mypy_cache/
 .ruff_cache/
 
-# uv
-uv.lock
 
 # Supabase local
 .supabase/
