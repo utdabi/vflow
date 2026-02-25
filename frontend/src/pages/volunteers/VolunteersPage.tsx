@@ -26,7 +26,7 @@ import {
 import AppNav, { APP_NAV_LINKS } from '../../components/AppNav'
 import ConfirmModal from '../../components/ConfirmModal'
 import { useAuth } from '../../lib/auth-context'
-import { dateFormatPattern, dateFormatExample, parseDateToISO } from '../../lib/date-format'
+import { dateFormatPattern, parseDateToISO } from '../../lib/date-format'
 import { analytics } from '../../lib/analytics'
 
 // ---------------------------------------------------------------------------

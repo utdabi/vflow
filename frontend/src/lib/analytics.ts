@@ -14,6 +14,7 @@ export type AnalyticsEvent =
   | 'shift_created'
   | 'shift_published'
   | 'assignment_added'
+  | 'assignment_saved'
   | 'backup_finder_opened'
   | 'backup_request_sent'
   | 'api_key_created'
