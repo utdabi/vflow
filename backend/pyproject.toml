@@ -16,6 +16,7 @@ dependencies = [
     "twilio>=9.2.0",
     "sentry-sdk[fastapi]>=2.8.0",
     "python-multipart>=0.0.9",
+    "rapidfuzz>=3.0",
 ]
 
 [build-system]

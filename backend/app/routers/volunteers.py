@@ -15,6 +15,8 @@
 #   POST   /api/volunteers/import          — parse CSV, return preview (no save)
 #   POST   /api/volunteers/import/confirm  — bulk save from preview
 #   GET    /api/volunteers/sample.csv      — download sample CSV template
+#   GET    /api/volunteers/duplicates      — find potential duplicate pairs
+#   POST   /api/volunteers/duplicates/merge — merge secondary into primary (hard-deletes secondary)
 #   GET    /api/volunteers/{id}            — get one volunteer
 #   PATCH  /api/volunteers/{id}            — update fields
 #   DELETE /api/volunteers/{id}            — soft-delete (active=false)
@@ -144,6 +146,12 @@ class ImportPreviewResponse(BaseModel):
 
 class ImportConfirmRequest(BaseModel):
     valid_rows: list[dict[str, Any]]
+
+
+class MergeRequest(BaseModel):
+    primary_id: str
+    secondary_id: str
+    field_overrides: dict = {}
 
 
 class ImportConfirmResponse(BaseModel):
@@ -387,6 +395,62 @@ async def download_sample_csv(
         media_type="text/csv",
         headers={"Content-Disposition": 'attachment; filename="volunteer_template.csv"'},
     )
+
+
+@router.get(
+    "/duplicates",
+    summary="Find potential duplicate volunteers",
+)
+async def find_duplicates(
+    current_user: Annotated[CurrentUser, Depends(get_current_user)] = None,
+    repo: VolunteerRepository = Depends(get_repo),
+):
+    """Return candidate duplicate pairs ranked by match confidence.
+
+    Uses Fellegi-Sunter weighted scoring with Jaro-Winkler fuzzy name matching.
+    Pairs with score >= 12 are 'likely'; 6-11 are 'possible'.
+    """
+    try:
+        return repo.find_duplicates(current_user.organization_id)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to scan for duplicates. Please try again.",
+        ) from exc
+
+
+@router.post(
+    "/duplicates/merge",
+    response_model=VolunteerOut,
+    summary="Merge secondary volunteer into primary",
+)
+async def merge_volunteers(
+    body: MergeRequest,
+    current_user: Annotated[CurrentUser, Depends(get_current_user)] = None,
+    repo: VolunteerRepository = Depends(get_repo),
+):
+    """Re-point all shift assignments and time logs from secondary to primary,
+    then permanently delete the secondary volunteer record.
+    """
+    if body.primary_id == body.secondary_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="primary_id and secondary_id must be different.",
+        )
+    try:
+        return repo.merge_volunteers(
+            body.primary_id, body.secondary_id, current_user.organization_id, body.field_overrides
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Merge failed. Please try again.",
+        ) from exc
 
 
 @router.get(

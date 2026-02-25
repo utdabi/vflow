@@ -148,6 +148,32 @@ export interface ImportConfirmResponse {
   errors: string[]
 }
 
+/** A volunteer record as returned inside a DuplicatePair — all fields shown in merge UI */
+export interface DuplicateVolunteer {
+  id: string
+  first_name: string
+  last_name: string
+  mobile: string | null
+  email: string | null
+  date_of_birth: string | null
+  gender: string | null
+  preferred_days: number[]
+  skills: string[]
+  notes: string | null
+  updated_at: string | null
+  created_at: string | null
+  shift_count: number
+}
+
+export interface DuplicatePair {
+  volunteer_a: DuplicateVolunteer
+  volunteer_b: DuplicateVolunteer
+  score: number
+  confidence: 'likely' | 'possible'
+  /** Per-field match status: 'match' | 'close' | 'mismatch' | 'missing' */
+  field_matches: Record<'mobile' | 'name' | 'email' | 'date_of_birth', 'match' | 'close' | 'mismatch' | 'missing'>
+}
+
 export const volunteersApi = {
   list: (active = true) =>
     api.get<Volunteer[]>('/api/volunteers', { params: { active } }),
@@ -177,6 +203,16 @@ export const volunteersApi = {
 
   downloadSampleCsv: (dateFormat: string = 'INTL') =>
     api.get<string>(`/api/volunteers/sample.csv?date_format=${dateFormat}`),
+
+  findDuplicates: () =>
+    api.get<DuplicatePair[]>('/api/volunteers/duplicates'),
+
+  mergeVolunteers: (primaryId: string, secondaryId: string, fieldOverrides: Record<string, unknown> = {}) =>
+    api.post<Volunteer>('/api/volunteers/duplicates/merge', {
+      primary_id: primaryId,
+      secondary_id: secondaryId,
+      field_overrides: fieldOverrides,
+    }),
 }
 
 // ---------------------------------------------------------------------------

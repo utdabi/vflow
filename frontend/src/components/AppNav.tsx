@@ -86,7 +86,7 @@ export interface NavLink {
 
 /** Shared nav links used on every authenticated page — import this instead of defining per-page. */
 export const APP_NAV_LINKS: NavLink[] = [
-  { label: 'Dashboard',  to: '/dashboard'  },
+  { label: 'Home',       to: '/dashboard'  },
   { label: 'Shifts',     to: '/shifts'     },
   { label: 'Volunteers', to: '/volunteers' },
 ]
@@ -272,6 +272,14 @@ export default function AppNav({ links = [], showSignOut = true }: AppNavProps) 
 
                 {userMenuOpen && (
                   <div className="absolute right-0 mt-1 w-44 bg-white border border-gray-200 rounded-xl shadow-lg py-1 z-50">
+                    <Link
+                      to="/volunteers/duplicates"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      Data Quality
+                    </Link>
+                    <div className="border-t border-gray-100 my-1" />
                     <button
                       onClick={() => { setUserMenuOpen(false); signOut() }}
                       className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"

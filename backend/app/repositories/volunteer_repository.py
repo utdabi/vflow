@@ -16,6 +16,7 @@ import unicodedata
 import logging
 from typing import Any
 
+from rapidfuzz.distance import JaroWinkler
 from supabase import Client
 
 from app.repositories.base_repository import BaseRepository
@@ -86,6 +87,98 @@ DAY_NAMES = {
     "fri": 5, "friday": 5,
     "sat": 6, "saturday": 6,
 }
+
+
+# Common English nickname → canonical first name.
+# Used as a fallback when full-name Jaro-Winkler falls below 0.80.
+NICKNAME_MAP: dict[str, str] = {
+    "bob": "robert", "bobby": "robert", "rob": "robert",
+    "bill": "william", "billy": "william", "will": "william",
+    "jim": "james", "jimmy": "james",
+    "jack": "john", "johnny": "john",
+    "liz": "elizabeth", "beth": "elizabeth", "betty": "elizabeth", "ellie": "elizabeth",
+    "mike": "michael", "mickey": "michael",
+    "dave": "david",
+    "chris": "christopher",
+    "tom": "thomas", "tommy": "thomas",
+    "dick": "richard", "rick": "richard",
+    "sue": "susan", "susie": "susan",
+    "kate": "katherine", "kathy": "katherine", "katie": "katherine",
+    "maggie": "margaret", "meg": "margaret",
+}
+
+
+def _are_nickname_match(first_a: str, first_b: str) -> bool:
+    """Return True if both first names reduce to the same canonical name."""
+    a, b = first_a.lower().strip(), first_b.lower().strip()
+    if a == b:
+        return True
+    return NICKNAME_MAP.get(a, a) == NICKNAME_MAP.get(b, b)
+
+
+def _score_pair(a: dict, b: dict) -> tuple[int, dict]:
+    """Fellegi-Sunter weighted score for a candidate duplicate pair.
+
+    Returns (score, field_matches) where field_matches values are:
+      'match' | 'close' (fuzzy) | 'mismatch' | 'missing'
+
+    Thresholds: score >= 12 → likely duplicate; 6–11 → possible; < 6 → skip.
+    """
+    score = 0
+    matches: dict[str, str] = {}
+
+    # Mobile — anchor field, highest discriminating power
+    mob_a, mob_b = a.get("mobile"), b.get("mobile")
+    if mob_a and mob_b:
+        if mob_a == mob_b:
+            score += 10; matches["mobile"] = "match"
+        else:
+            score -= 3; matches["mobile"] = "mismatch"
+    else:
+        matches["mobile"] = "missing"
+
+    # Full name — Jaro-Winkler fuzzy comparison (weights prefix matches more)
+    name_a = f"{a.get('first_name', '')} {a.get('last_name', '')}".strip().lower()
+    name_b = f"{b.get('first_name', '')} {b.get('last_name', '')}".strip().lower()
+    jw = JaroWinkler.normalized_similarity(name_a, name_b)
+    if jw >= 0.92:
+        score += 6; matches["name"] = "match"
+    elif jw >= 0.80:
+        score += 3; matches["name"] = "close"
+    else:
+        # Nickname fallback: Bob/Robert, Bill/William, etc.
+        # Requires BOTH nickname match AND similar last name to score as "close"
+        # (guards against husband/wife who share an email but have different first names)
+        last_a = (a.get("last_name") or "").lower().strip()
+        last_b = (b.get("last_name") or "").lower().strip()
+        last_jw = JaroWinkler.normalized_similarity(last_a, last_b) if last_a and last_b else 0.0
+        if _are_nickname_match(a.get("first_name", ""), b.get("first_name", "")) and last_jw >= 0.80:
+            score += 3; matches["name"] = "close"
+        else:
+            score -= 4; matches["name"] = "mismatch"
+
+    # Email — optional booster; missing = neutral
+    email_a = (a.get("email") or "").lower()
+    email_b = (b.get("email") or "").lower()
+    if email_a and email_b:
+        if email_a == email_b:
+            score += 6; matches["email"] = "match"
+        else:
+            score -= 1; matches["email"] = "mismatch"
+    else:
+        matches["email"] = "missing"
+
+    # Date of birth — optional booster; missing = neutral
+    dob_a, dob_b = a.get("date_of_birth"), b.get("date_of_birth")
+    if dob_a and dob_b:
+        if dob_a == dob_b:
+            score += 4; matches["date_of_birth"] = "match"
+        else:
+            score -= 2; matches["date_of_birth"] = "mismatch"
+    else:
+        matches["date_of_birth"] = "missing"
+
+    return score, matches
 
 
 def _parse_date(raw: str, date_format: str = "INTL") -> str | None:
@@ -234,6 +327,135 @@ class VolunteerRepository(BaseRepository):
             raise
         logger.info("Supabase ← volunteer deactivated OK")
         return record
+
+    def find_duplicates(self, org_id: str) -> list[dict]:
+        """Compare all active volunteers in the org and return candidate duplicate pairs.
+
+        Each pair includes a Fellegi-Sunter score, a confidence label, per-field
+        match results, and shift counts for both volunteers.
+        """
+        logger.info("Supabase → find duplicates (org: %s)", org_id)
+        resp = (
+            self._client.table("volunteers")
+            .select("id,first_name,last_name,mobile,email,date_of_birth,gender,preferred_days,skills,notes,updated_at,created_at")
+            .eq("organization_id", org_id)
+            .eq("active", True)
+            .execute()
+        )
+        vols = resp.data or []
+        logger.info("Supabase ← find duplicates OK (scanning %d volunteers)", len(vols))
+
+        results = []
+        for i in range(len(vols)):
+            for j in range(i + 1, len(vols)):
+                score, field_matches = _score_pair(vols[i], vols[j])
+                if score >= 6:
+                    results.append({
+                        "volunteer_a": dict(vols[i]),
+                        "volunteer_b": dict(vols[j]),
+                        "score": score,
+                        "confidence": "likely" if score >= 12 else "possible",
+                        "field_matches": field_matches,
+                    })
+        results.sort(key=lambda r: r["score"], reverse=True)
+
+        # Enrich each volunteer with their shift count
+        vol_ids = list({v["id"] for r in results for v in [r["volunteer_a"], r["volunteer_b"]]})
+        if vol_ids:
+            try:
+                assignments = (
+                    self._client.table("shift_assignments")
+                    .select("volunteer_id")
+                    .in_("volunteer_id", vol_ids)
+                    .execute()
+                    .data or []
+                )
+            except Exception as exc:
+                logger.error("Supabase ← shift counts error: %s", exc)
+                assignments = []
+            count_map: dict[str, int] = {}
+            for row in assignments:
+                vid = row["volunteer_id"]
+                count_map[vid] = count_map.get(vid, 0) + 1
+            for r in results:
+                r["volunteer_a"]["shift_count"] = count_map.get(r["volunteer_a"]["id"], 0)
+                r["volunteer_b"]["shift_count"] = count_map.get(r["volunteer_b"]["id"], 0)
+
+        logger.info("Supabase ← find duplicates: %d candidate pairs", len(results))
+        return results
+
+    def merge_volunteers(
+        self,
+        primary_id: str,
+        secondary_id: str,
+        org_id: str,
+        field_overrides: dict | None = None,
+    ) -> dict:
+        """Merge secondary volunteer into primary: re-point all FK references, apply any
+        field-level overrides chosen by the coordinator, then hard-delete secondary."""
+        logger.info(
+            "Supabase → merge volunteers %s ← %s (org: %s)", primary_id, secondary_id, org_id
+        )
+        # Verify both belong to this org
+        for vid in [primary_id, secondary_id]:
+            check = (
+                self._client.table("volunteers")
+                .select("id")
+                .eq("id", vid)
+                .eq("organization_id", org_id)
+                .execute()
+            )
+            if not check.data:
+                raise ValueError(f"Volunteer {vid} not found in org")
+
+        try:
+            # Re-point shift_assignments
+            self._client.table("shift_assignments").update(
+                {"volunteer_id": primary_id}
+            ).eq("volunteer_id", secondary_id).execute()
+
+            # Re-point time_logs
+            self._client.table("time_logs").update(
+                {"volunteer_id": primary_id}
+            ).eq("volunteer_id", secondary_id).execute()
+
+            # Hard-delete secondary — FKs already re-pointed above.
+            # Must happen BEFORE field-override patch so that unique constraints
+            # (mobile, email per org) don't fire when copying a value that currently
+            # belongs to the secondary record.
+            self._client.table("volunteers").delete().eq(
+                "id", secondary_id
+            ).eq("organization_id", org_id).execute()
+
+            # Apply coordinator-chosen field overrides from the secondary record
+            if field_overrides:
+                MERGEABLE = {
+                    "first_name", "last_name", "gender", "date_of_birth",
+                    "email", "mobile", "skills", "notes", "preferred_days",
+                }
+                safe_overrides = {k: v for k, v in field_overrides.items() if k in MERGEABLE}
+                if safe_overrides:
+                    logger.info(
+                        "Supabase → patch primary with field overrides: %s",
+                        list(safe_overrides.keys()),
+                    )
+                    patch_resp = self._client.table("volunteers").update(safe_overrides).eq(
+                        "id", primary_id
+                    ).execute()
+                    logger.info(
+                        "Supabase ← patch primary overrides OK: %s → data=%s",
+                        list(safe_overrides.keys()),
+                        patch_resp.data,
+                    )
+        except Exception as exc:
+            logger.error("Supabase ← merge volunteers error: %s", exc)
+            raise
+
+        logger.info("Supabase ← merge volunteers OK (primary: %s)", primary_id)
+        result = (
+            self._client.table("volunteers").select("*").eq("id", primary_id).execute()
+        )
+        return result.data[0]
 
     def bulk_create(self, org_id: str, rows: list[dict[str, Any]]) -> list[dict]:
         """Bulk-insert validated volunteer rows from CSV import."""

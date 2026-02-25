@@ -300,10 +300,6 @@ export default function VolunteersPage() {
             <h1 className="text-2xl font-bold text-gray-900">Volunteers</h1>
           </div>
           <div className="flex gap-2">
-            <button onClick={downloadTemplate}
-              className="px-3 py-2 text-sm text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
-              ⬇ Template
-            </button>
             <button onClick={() => { setShowImport(true); setImportPreview(null); setImportError(null) }}
               className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
               Import CSV
@@ -445,6 +441,17 @@ export default function VolunteersPage() {
             </table>
           </div>
         )}
+
+        {/* ── Starter Template footer ── */}
+        <div className="mt-6 flex items-center gap-3 text-sm text-gray-400">
+          <span>New to VolunteerFlow?</span>
+          <button
+            onClick={downloadTemplate}
+            className="text-blue-500 hover:text-blue-700 hover:underline transition-colors"
+          >
+            ⬇ Download starter template
+          </button>
+        </div>
       </div>
 
       {/* ================================================================== */}

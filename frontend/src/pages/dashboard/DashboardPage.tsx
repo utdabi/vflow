@@ -5,11 +5,13 @@
 //               by hovering over the logo mark and clicking the pencil icon.
 
 import { Link } from 'react-router-dom'
+import { useFlags } from 'launchdarkly-react-client-sdk'
 import { useAuth } from '../../lib/auth-context'
 import AppNav, { APP_NAV_LINKS } from '../../components/AppNav'
 
 export default function DashboardPage() {
   const { user } = useAuth()
+  const { enableBackupFinder } = useFlags()
 
   const fullName: string =
     (user?.user_metadata?.full_name as string | undefined) ?? user?.email ?? 'Coordinator'
@@ -40,7 +42,7 @@ export default function DashboardPage() {
               <span className="text-green-500 mt-0.5">✓</span>
               <div>
                 <p className="text-sm font-medium text-gray-900">Account set up</p>
-                <p className="text-xs text-gray-500">You just completed this!</p>
+                <p className="text-xs text-gray-500">Done</p>
               </div>
             </div>
             <Link to="/volunteers" className="px-6 py-4 flex items-start gap-3 hover:bg-blue-50 transition-colors">
@@ -57,13 +59,15 @@ export default function DashboardPage() {
                 <p className="text-xs text-gray-500">Click to open the shift calendar</p>
               </div>
             </Link>
-            <Link to="/shifts" className="px-6 py-4 flex items-start gap-3 hover:bg-blue-50 transition-colors">
-              <span className="text-blue-400 mt-0.5">→</span>
-              <div>
-                <p className="text-sm font-medium text-blue-700">Use the backup finder</p>
-                <p className="text-xs text-gray-500">Cancel a volunteer on any shift to find a backup</p>
-              </div>
-            </Link>
+            {enableBackupFinder && (
+              <Link to="/shifts" className="px-6 py-4 flex items-start gap-3 hover:bg-blue-50 transition-colors">
+                <span className="text-blue-400 mt-0.5">→</span>
+                <div>
+                  <p className="text-sm font-medium text-blue-700">Use the backup finder</p>
+                  <p className="text-xs text-gray-500">Cancel a volunteer on any shift to find a backup</p>
+                </div>
+              </Link>
+            )}
           </div>
 
           <p className="mt-8 text-sm text-gray-400">
