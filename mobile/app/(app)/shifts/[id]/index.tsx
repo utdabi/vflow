@@ -1,4 +1,4 @@
-// app/(app)/shifts/[id].tsx — Phase 3
+// app/(app)/shifts/[id]/index.tsx — Phase 3
 // Dispatch board: assign and remove volunteers from a shift.
 // Tablet (≥768dp): permanent two-panel side-by-side layout.
 // Phone (<768dp): tab toggle between "Available" and "Assigned" panels.
@@ -12,10 +12,10 @@ import { router, useLocalSearchParams } from 'expo-router'
 import {
   shiftsApi, volunteersApi,
   type ShiftDetail, type ShiftAssignment, type Volunteer,
-} from '../../../lib/api'
-import { formatDate, formatTime } from '../../../lib/date'
-import { useAuth } from '../../../lib/auth-context'
-import CapacityBar from '../../../components/CapacityBar'
+} from '../../../../lib/api'
+import { formatDate, formatTime } from '../../../../lib/date'
+import { useAuth } from '../../../../lib/auth-context'
+import CapacityBar from '../../../../components/CapacityBar'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -43,7 +43,15 @@ const DAY_SHORT = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
 // ---------------------------------------------------------------------------
 // Shift header (spans full width above both panels)
 // ---------------------------------------------------------------------------
-function ShiftHeader({ shift, dateFormat }: { shift: ShiftDetail; dateFormat: string }) {
+function ShiftHeader({
+  shift,
+  dateFormat,
+  onEdit,
+}: {
+  shift: ShiftDetail
+  dateFormat: string
+  onEdit: () => void
+}) {
   return (
     <View className="bg-white border-b border-gray-200 px-4 py-4">
       <View className="flex-row items-center mb-1">
@@ -59,6 +67,9 @@ function ShiftHeader({ shift, dateFormat }: { shift: ShiftDetail; dateFormat: st
         >
           {STATUS_LABELS[shift.status] ?? shift.status}
         </Text>
+        <TouchableOpacity onPress={onEdit} className="ml-3 px-2 py-1">
+          <Text className="text-lg">✏️</Text>
+        </TouchableOpacity>
       </View>
       <Text className="text-sm text-gray-500 mb-1">
         {formatDate(shift.date, dateFormat as 'US' | 'INTL')}
@@ -351,7 +362,11 @@ export default function ShiftDetailScreen() {
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <View className="flex-1 bg-gray-50">
-      <ShiftHeader shift={shift} dateFormat={dateFormat} />
+      <ShiftHeader
+        shift={shift}
+        dateFormat={dateFormat}
+        onEdit={() => router.push(`/(app)/shifts/${id}/edit`)}
+      />
 
       {isTablet ? (
         // Two panels side-by-side

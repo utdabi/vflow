@@ -10,7 +10,7 @@ import { useAuth } from '../../lib/auth-context'
 import AppNav, { APP_NAV_LINKS } from '../../components/AppNav'
 
 export default function DashboardPage() {
-  const { user } = useAuth()
+  const { user, organization } = useAuth()
   const { enableBackupFinder } = useFlags()
 
   const fullName: string =
@@ -28,7 +28,7 @@ export default function DashboardPage() {
             Welcome, {fullName}! 👋
           </h1>
           <p className="mt-3 text-lg text-gray-500">
-            Your VolunteerFlow account is set up and ready.
+            Coordinator{organization?.name ? ` · ${organization.name}` : ''}
           </p>
 
           {/* Getting-started checklist — will be replaced by real dashboard in Feature 5.1 */}

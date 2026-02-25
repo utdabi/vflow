@@ -2,7 +2,7 @@
 // Permanent left-rail navigation for tablets (width >= 768dp).
 // Shows: Home · Shifts · Volunteers + Sign out at bottom.
 
-import { View, Text, TouchableOpacity } from 'react-native'
+import { View, Text, TouchableOpacity, Image } from 'react-native'
 import { usePathname, router } from 'expo-router'
 import { useAuth } from '../lib/auth-context'
 
@@ -19,10 +19,21 @@ export default function SidebarNav() {
   return (
     <View className="w-52 bg-white border-r border-gray-200 flex flex-col py-4">
       {/* Brand */}
-      <View className="px-4 mb-6">
+      <View className="px-4 mb-6 items-center">
+        {organization?.logo_url ? (
+          <Image
+            source={{ uri: organization.logo_url }}
+            style={{ width: 64, height: 64, borderRadius: 8 }}
+            resizeMode="contain"
+          />
+        ) : (
+          <View className="w-16 h-16 bg-blue-600 rounded-lg items-center justify-center">
+            <Text className="text-white text-2xl font-bold">VF</Text>
+          </View>
+        )}
         {organization?.name
-          ? <Text className="text-sm font-bold text-gray-900" numberOfLines={1}>{organization.name}</Text>
-          : <Text className="text-sm font-bold text-blue-600">VolunteerFlow</Text>
+          ? <Text className="text-sm font-bold text-gray-900 mt-2" numberOfLines={1}>{organization.name}</Text>
+          : <Text className="text-sm font-bold text-blue-600 mt-2">VolunteerFlow</Text>
         }
         <Text className="text-xs text-gray-400 mt-0.5">Coordinator</Text>
       </View>

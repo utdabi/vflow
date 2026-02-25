@@ -18,16 +18,16 @@ export default function HomeScreen() {
 
   const tiles: Tile[] = [
     {
-      icon: '👥',
-      title: 'Volunteers',
-      subtitle: 'View and manage your volunteer list',
-      onPress: () => router.push('/(app)/volunteers/'),
-    },
-    {
       icon: '📅',
       title: 'Shifts',
       subtitle: 'Browse the monthly shift calendar',
       onPress: () => router.push('/(app)/shifts/'),
+    },
+    {
+      icon: '👥',
+      title: 'Volunteers',
+      subtitle: 'View and manage your volunteer list',
+      onPress: () => router.push('/(app)/volunteers/'),
     },
     {
       icon: '➕',
