@@ -96,12 +96,14 @@ interface AppNavProps {
   links?: NavLink[]
   /** Show the Sign out button — set false on public pages like /login */
   showSignOut?: boolean
+  /** Always show the default VF brand mark, ignoring any uploaded org logo — use on public/setup pages */
+  forceBrandLogo?: boolean
 }
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
-export default function AppNav({ links = [], showSignOut = true }: AppNavProps) {
+export default function AppNav({ links = [], showSignOut = true, forceBrandLogo = false }: AppNavProps) {
   const { organization, user, signOut, refreshOrg } = useAuth()
   const { pathname } = useLocation()
   const [uploading, setUploading] = useState(false)
@@ -183,18 +185,18 @@ export default function AppNav({ links = [], showSignOut = true }: AppNavProps) 
                 className="flex items-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
                 aria-label="Go to dashboard"
               >
-                {organization?.logo_url ? (
+                {!forceBrandLogo && organization?.logo_url ? (
                   /* Org has uploaded their own logo */
                   <img
                     src={organization.logo_url}
                     alt={organization.name ?? 'Organisation logo'}
                     className="h-9 w-auto max-w-[160px] object-contain rounded"
                   />
-                ) : user && !organization ? (
+                ) : !forceBrandLogo && user && !organization ? (
                   /* Logged in but org still loading — show skeleton to avoid flash */
                   <div className="h-9 w-28 bg-gray-100 rounded animate-pulse" />
                 ) : (
-                  /* Default VolunteerFlow brand mark (not logged in) */
+                  /* Default VolunteerFlow brand mark */
                   <>
                     <DefaultLogoMark />
                     <span className="text-lg font-bold text-blue-600 hidden sm:block select-none">
