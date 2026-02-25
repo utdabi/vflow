@@ -31,7 +31,7 @@ export default function TermsPage() {
             </p>
             <p className="mt-3 text-sm text-blue-600">
               Questions?{' '}
-              <a href="mailto:support@volunteerflow.com" className="underline">
+              <a href="mailto:support@volunteerflow.net" className="underline">
                 Contact support
               </a>
             </p>

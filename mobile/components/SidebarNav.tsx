@@ -7,7 +7,7 @@ import { usePathname, router } from 'expo-router'
 import { useAuth } from '../lib/auth-context'
 
 const NAV_ITEMS = [
-  { label: 'Home',       route: '/(app)/' as const,             icon: '⌂' },
+  { label: 'Home',       route: '/(app)/' as const,             icon: '🏠' },
   { label: 'Shifts',     route: '/(app)/shifts/' as const,      icon: '📅' },
   { label: 'Volunteers', route: '/(app)/volunteers/' as const,  icon: '👥' },
 ]

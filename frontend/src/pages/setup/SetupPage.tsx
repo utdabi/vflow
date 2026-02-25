@@ -425,7 +425,7 @@ function TokenErrorScreen({ message }: { message: string }) {
             <p className="text-sm text-gray-600">{message}</p>
             <p className="mt-4 text-sm text-gray-500">
               Need help?{' '}
-              <a href="mailto:support@volunteerflow.com" className="text-blue-600 underline">
+              <a href="mailto:support@volunteerflow.net" className="text-blue-600 underline">
                 Contact support
               </a>
             </p>

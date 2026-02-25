@@ -66,7 +66,7 @@ export default function HomeScreen() {
       {/* Support */}
       <Text className="mt-10 text-xs text-gray-400 text-center">
         Questions? Contact{' '}
-        <Text className="text-blue-600">support@volunteerflow.com</Text>
+        <Text className="text-blue-600">support@volunteerflow.net</Text>
       </Text>
     </ScrollView>
   )

@@ -73,7 +73,7 @@ export default function DashboardPage() {
           <p className="mt-8 text-sm text-gray-400">
             Questions?{' '}
             <a
-              href="mailto:support@volunteerflow.com"
+              href="mailto:support@volunteerflow.net"
               className="text-blue-600 underline"
             >
               Contact support
