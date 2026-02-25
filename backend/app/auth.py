@@ -85,4 +85,29 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    # Ensure the referenced organization still exists.
+    # This prevents orphaned users (with stale organization_id metadata)
+    # from accessing protected API routes after an org has been deleted.
+    try:
+        org_response = (
+            client.table("organizations")
+            .select("id")
+            .eq("id", organization_id)
+            .maybe_single()
+            .execute()
+        )
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication check failed. Please sign in again.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    if org_response.data is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Organization not found. Please contact support.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     return CurrentUser(id=user_id, email=email, organization_id=organization_id)
