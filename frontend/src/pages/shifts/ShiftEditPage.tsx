@@ -18,6 +18,7 @@ import {
   shiftsApi, volunteersApi, backupFinderApi,
   type ShiftDetail, type Volunteer, type BackupSuggestion,
 } from '../../lib/api'
+import { useFlags } from 'launchdarkly-react-client-sdk'
 import { useAuth } from '../../lib/auth-context'
 import { formatDate } from '../../lib/date-format'
 import { analytics } from '../../lib/analytics'
@@ -193,6 +194,7 @@ export default function ShiftEditPage() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { organization } = useAuth()
+  const { enableBackupFinder } = useFlags()
   const orgDateFmt = organization?.date_format ?? 'INTL'
 
   const mode = shiftId ? 'edit' : 'create'
@@ -434,7 +436,7 @@ export default function ShiftEditPage() {
       setPendingAdds(new Set())
       setPendingRemoves(new Set())
       await loadShift()
-      if (removedIds.length > 0) {
+      if (removedIds.length > 0 && enableBackupFinder) {
         setLastCancelledId(removedIds[removedIds.length - 1])
         setShowBackupFinder(true)
         analytics.track('backup_finder_opened')

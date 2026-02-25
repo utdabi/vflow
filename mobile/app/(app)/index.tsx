@@ -40,11 +40,8 @@ export default function HomeScreen() {
   return (
     <ScrollView className="flex-1 bg-gray-50" contentContainerClassName="p-6">
       {/* Welcome */}
-      <Text className="text-2xl font-bold text-gray-900 mb-1">
+      <Text className="text-2xl font-bold text-gray-900 mb-8">
         Welcome, {fullName}! 👋
-      </Text>
-      <Text className="text-base text-gray-500 mb-8">
-        Your VolunteerFlow account is ready.
       </Text>
 
       {/* Quick-action tiles */}
